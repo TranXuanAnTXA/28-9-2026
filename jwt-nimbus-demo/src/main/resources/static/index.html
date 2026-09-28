@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>JWT Demo UI</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 50px; background-color: #f4f4f9; }
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input { display: block; width: 100%; padding: 8px; margin: 10px 0; box-sizing: border-box; }
+        button { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+
+    <h2>Giao Diện Trực Quan JWT Demo</h2>
+
+    <!-- Form Đăng nhập -->
+    <div class="card">
+        <h3>1. Đăng nhập hệ thống</h3>
+        <input type="text" id="username" placeholder="Username (VD: admin)" value="admin">
+        <input type="password" id="password" placeholder="Password (VD: 123456)" value="123456">
+        <button onclick="login()">Đăng nhập & Lấy Token</button>
+    </div>
+
+    <!-- Khu vực hiển thị Token và gọi API bảo mật -->
+    <div class="card">
+        <h3>2. Kết quả & Gọi API được bảo vệ</h3>
+        <p><strong>Token nhận được:</strong></p>
+        <pre id="tokenBox">Chưa có token...</pre>
+        <button onclick="callProtectedApi()">Gọi API bảo mật (Gửi kèm Token)</button>
+        <p><strong>Kết quả từ API bảo mật:</strong></p>
+        <pre id="apiResult">Chưa gọi...</pre>
+    </div>
+
+    <script>
+        let jwtToken = "";
+
+        async function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            try {
+                const response = await fetch('http://localhost:8080/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Đăng nhập thất bại! Sai tài khoản hoặc mật khẩu.");
+                }
+
+                const data = await response.json();
+                jwtToken = data.token; // Lưu token vào biến
+                
+                // Hiển thị lên màn hình
+                document.getElementById("tokenBox").innerText = jwtToken;
+                alert("Đăng nhập thành công! Đã lưu Token.");
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        async function callProtectedApi() {
+            if (!jwtToken) {
+                alert("Vui lòng đăng nhập để lấy token trước!");
+                return;
+            }
+
+            try {
+                // Gọi API bảo mật và đính kèm Token vào Header (Authorization: Bearer <token>)
+                const response = await fetch('http://localhost:8080/test/hello', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + jwtToken
+                    }
+                });
+
+                const resultText = await response.text();
+                document.getElementById("apiResult").innerText = resultText;
+            } catch (error) {
+                document.getElementById("apiResult").innerText = "Lỗi: " + error.message;
+            }
+        }
+    </script>
+
+</body>
+</html>
